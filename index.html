@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ankara Ortak Fotoğraf Haritası</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        .sidebar {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button.save-btn {
+            width: 100%;
+            background-color: #0275d8;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button.save-btn:hover { background-color: #025aa5; }
+        #map {
+            height: 82vh;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #e5e3df;
+        }
+        
+        .photo-marker {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            border: 2px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            object-fit: cover;
+            transition: all 0.25s ease-in-out;
+            cursor: pointer;
+            background-color: white;
+        }
+        .photo-marker:hover {
+            width: 95px;
+            height: 95px;
+            transform: scale(1.1) translateY(-10px);
+            z-index: 1000 !important;
+            border-color: #0275d8;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+        .popup-container { text-align: center; }
+        .popup-img { max-width: 220px; max-height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 5px; }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-top: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .delete-btn:hover { background-color: #c82333; }
+        .status-text { margin-top: 10px; font-weight: bold; color: #28a745; text-align: center; }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align: center;">Ankara Ortak Fotoğraf Haritası</h2>
+
+<div class="container">
+    <div class="sidebar">
+        <h3>İşaretleme Ekle</h3>
+        
+        <div class="form-group">
+            <label>Öğrenci Adı Soyadı:</label>
+            <input type="text" id="uploaderName" placeholder="Adınız Soyadınız">
+        </div>
+
+        <div class="form-group">
+            <label>Fotoğraf Seç:</label>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+
+        <div class="form-group">
+            <label>Enlem (Lat):</label>
+            <input type="text" id="latInput" placeholder="EXIF veya haritaya tıklayın" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Boylam (Lon):</label>
+            <input type="text" id="lngInput" placeholder="EXIF veya haritaya tıklayın" readonly>
+        </div>
+
+        <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; font-size: 12px; margin-bottom: 15px;">
+            <strong>İpucu:</strong> Haritadan bir noktaya <u>tıklayarak</u> konumu el ile seçebilirsiniz.
+        </div>
+
+        <button class="save-btn" id="saveBtn">Fotoğrafı Haritaya Ekle</button>
+        <div id="statusText" class="status-text"></div>
+    </div>
+
+    <div id="map"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+    // KENDİ FIREBASE BİLGİLERİN ENTEGRE EDİLDİ
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHfCsrY2yFi6sXHDPkvgNKxQTU0pP7gm4",
+      authDomain: "fotografarsivigudul.firebaseapp.com",
+      projectId: "fotografarsivigudul",
+      storageBucket: "fotografarsivigudul.firebasestorage.app",
+      messagingSenderId: "743990828441",
+      appId: "1:743990828441:web:d04a109c7d614508464708",
+      measurementId: "G-CNHBSWN6HR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const ankaraBounds = L.latLngBounds(
+        L.latLng(38.8000, 31.3000),
+        L.latLng(40.7000, 33.8000)
+    );
+
+    const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        minZoom: 9,
+        attribution: '&copy; OpenStreetMap'
+    });
+
+    let map = L.map('map', {
+        center: [39.9334, 32.8597],
+        zoom: 10,
+        minZoom: 9,
+        maxBounds: ankaraBounds,
+        maxBoundsViscosity: 1.0,
+        layers: [osmHot]
+    });
+
+    let tempMarker = null;
+    let loadedMarkers = {};
+
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        EXIF.getData(file, function() {
+            const lat = EXIF.getTag(this, "GPSLatitude");
+            const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+            const lon = EXIF.getTag(this, "GPSLongitude");
+            const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
+
+            if (lat && lon && latRef && lonRef) {
+                const latitude = convertDMSToDD(lat[0], lat[1], lat[2], latRef);
+                const longitude = convertDMSToDD(lon[0], lon[1], lon[2], lonRef);
+
+                if (ankaraBounds.contains([latitude, longitude])) {
+                    document.getElementById('latInput').value = latitude.toFixed(6);
+                    document.getElementById('lngInput').value = longitude.toFixed(6);
+                    updateTempMarker(latitude, longitude);
+                } else {
+                    alert("Fotoğraf Ankara sınırları dışında! Lütfen Ankara içinden bir konum seçin.");
+                }
+            } else {
+                alert("Fotoğrafta GPS konumu bulunamadı. Lütfen harita üzerinden bir noktaya tıklayarak konum seçin.");
+            }
+        });
+    });
+
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        document.getElementById('latInput').value = lat.toFixed(6);
+        document.getElementById('lngInput').value = lng.toFixed(6);
+
+        updateTempMarker(lat, lng);
+    });
+
+    function updateTempMarker(lat, lng) {
+        if (tempMarker) map.removeLayer(tempMarker);
+        tempMarker = L.marker([lat, lng]).addTo(map).bindPopup("Seçilen Konum").openPopup();
+        map.setView([lat, lng], 13);
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', async function() {
+        const file = document.getElementById('imageInput').files[0];
+        const uploader = document.getElementById('uploaderName').value || 'İsimsiz Öğrenci';
+        const lat = parseFloat(document.getElementById('latInput').value);
+        const lng = parseFloat(document.getElementById('lngInput').value);
+        const statusText = document.getElementById('statusText');
+
+        if (!file || isNaN(lat) || isNaN(lng)) {
+            alert("Lütfen fotoğraf seçin ve haritadan bir konum belirleyin!");
+            return;
+        }
+
+        try {
+            statusText.innerText = "Yükleniyor...";
+
+            const fileName = Date.now() + '_' + file.name;
+            const storageRef = ref(storage, 'ankara_photos/' + fileName);
+            await uploadBytes(storageRef, file);
+            const imageUrl = await getDownloadURL(storageRef);
+
+            await addDoc(collection(db, "ankara_markers"), {
+                uploader: uploader,
+                imageUrl: imageUrl,
+                storagePath: 'ankara_photos/' + fileName,
+                lat: lat,
+                lng: lng,
+                date: new Date().toLocaleDateString('tr-TR')
+            });
+
+            statusText.innerText = "Başarıyla Eklendi!";
+            setTimeout(() => { statusText.innerText = ""; }, 3000);
+
+            document.getElementById('imageInput').value = '';
+            document.getElementById('latInput').value = '';
+            document.getElementById('lngInput').value = '';
+            if (tempMarker) map.removeLayer(tempMarker);
+
+        } catch (error) {
+            console.error("Hata:", error);
+            alert("Yükleme sırasında hata oluştu! Firebase izinlerinizi kontrol edin.");
+            statusText.innerText = "";
+        }
+    });
+
+    onSnapshot(collection(db, "ankara_markers"), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            const photoData = change.doc.data();
+            const docId = change.doc.id;
+
+            if (change.type === "added") {
+                addMarkerToMap(docId, photoData);
+            }
+            if (change.type === "removed") {
+                if (loadedMarkers[docId]) {
+                    map.removeLayer(loadedMarkers[docId]);
+                    delete loadedMarkers[docId];
+                }
+            }
+        });
+    });
+
+    function addMarkerToMap(id, photo) {
+        const customPhotoIcon = L.divIcon({
+            className: 'custom-photo-pin',
+            html: `<img src="${photo.imageUrl}" class="photo-marker" title="${photo.uploader}">`,
+            iconSize: [45, 45],
+            iconAnchor: [22, 22]
+        });
+
+        const popupContent = `
+            <div class="popup-container">
+                <img src="${photo.imageUrl}" class="popup-img"><br>
+                <strong>Yükleyen:</strong> ${photo.uploader}<br>
+                <small>Tarih: ${photo.date}</small><br>
+                <button class="delete-btn" onclick="window.deletePhoto('${id}', '${photo.storagePath}')">🗑 Sil</button>
+            </div>
+        `;
+
+        const marker = L.marker([photo.lat, photo.lng], { icon: customPhotoIcon })
+            .addTo(map)
+            .bindPopup(popupContent);
+
+        loadedMarkers[id] = marker;
+    }
+
+    window.deletePhoto = async function(docId, storagePath) {
+        if (confirm("Bu fotoğrafı haritadan silmek istediğinize emin misiniz?")) {
+            try {
+                await deleteDoc(doc(db, "ankara_markers", docId));
+                const fileRef = ref(storage, storagePath);
+                await deleteObject(fileRef);
+            } catch (err) {
+                console.error("Silme hatası:", err);
+            }
+        }
+    };
+
+    function convertDMSToDD(degrees, minutes, seconds, direction) {
+        let dd = Number(degrees) + (Number(minutes) / 60) + (Number(seconds) / 3600);
+        if (direction === "S" || direction === "W") dd = dd * -1;
+        return dd;
+    }
+</script>
+
+</body>
+</html>
