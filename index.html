@@ -138,9 +138,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    // KENDİ FIREBASE BİLGİLERİN ENTEGRE EDİLDİ
+    // FIREBASE CONFIGURE
     const firebaseConfig = {
       apiKey: "AIzaSyDHfCsrY2yFi6sXHDPkvgNKxQTU0pP7gm4",
       authDomain: "fotografarsivigudul.firebaseapp.com",
@@ -153,7 +152,6 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
     const ankaraBounds = L.latLngBounds(
         L.latLng(38.8000, 31.3000),
@@ -176,11 +174,49 @@
     });
 
     let tempMarker = null;
+    let selectedImageBase64 = null;
     let loadedMarkers = {};
 
-    document.getElementById('imageInput').addEventListener('change', function(e) {
+    // FOTOĞRAFI SIKIŞTIRIP BASE64 METNİNE ÇEVİREN FONKSİYON
+    function processImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const max_size = 600; // Harita ekranı için optimum boyut
+
+                    if (width > height) {
+                        if (width > max_size) {
+                            height *= max_size / width;
+                            width = max_size;
+                        }
+                    } else {
+                        if (height > max_size) {
+                            width *= max_size / height;
+                            height = max_size;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // %70 kalitede sıkıştırır
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
+
+        selectedImageBase64 = await processImage(file);
 
         EXIF.getData(file, function() {
             const lat = EXIF.getTag(this, "GPSLatitude");
@@ -200,7 +236,7 @@
                     alert("Fotoğraf Ankara sınırları dışında! Lütfen Ankara içinden bir konum seçin.");
                 }
             } else {
-                alert("Fotoğrafta GPS konumu bulunamadı. Lütfen harita üzerinden bir noktaya tıklayarak konum seçin.");
+                alert("Fotoğrafta GPS konumu bulunamadı. Lütfen haritadan bir noktaya tıklayarak konum seçin.");
             }
         });
     });
@@ -222,13 +258,12 @@
     }
 
     document.getElementById('saveBtn').addEventListener('click', async function() {
-        const file = document.getElementById('imageInput').files[0];
         const uploader = document.getElementById('uploaderName').value || 'İsimsiz Öğrenci';
         const lat = parseFloat(document.getElementById('latInput').value);
         const lng = parseFloat(document.getElementById('lngInput').value);
         const statusText = document.getElementById('statusText');
 
-        if (!file || isNaN(lat) || isNaN(lng)) {
+        if (!selectedImageBase64 || isNaN(lat) || isNaN(lng)) {
             alert("Lütfen fotoğraf seçin ve haritadan bir konum belirleyin!");
             return;
         }
@@ -236,15 +271,9 @@
         try {
             statusText.innerText = "Yükleniyor...";
 
-            const fileName = Date.now() + '_' + file.name;
-            const storageRef = ref(storage, 'ankara_photos/' + fileName);
-            await uploadBytes(storageRef, file);
-            const imageUrl = await getDownloadURL(storageRef);
-
             await addDoc(collection(db, "ankara_markers"), {
                 uploader: uploader,
-                imageUrl: imageUrl,
-                storagePath: 'ankara_photos/' + fileName,
+                imageUrl: selectedImageBase64,
                 lat: lat,
                 lng: lng,
                 date: new Date().toLocaleDateString('tr-TR')
@@ -256,11 +285,12 @@
             document.getElementById('imageInput').value = '';
             document.getElementById('latInput').value = '';
             document.getElementById('lngInput').value = '';
+            selectedImageBase64 = null;
             if (tempMarker) map.removeLayer(tempMarker);
 
         } catch (error) {
             console.error("Hata:", error);
-            alert("Yükleme sırasında hata oluştu! Firebase izinlerinizi kontrol edin.");
+            alert("Yükleme sırasında hata oluştu!");
             statusText.innerText = "";
         }
     });
@@ -295,7 +325,7 @@
                 <img src="${photo.imageUrl}" class="popup-img"><br>
                 <strong>Yükleyen:</strong> ${photo.uploader}<br>
                 <small>Tarih: ${photo.date}</small><br>
-                <button class="delete-btn" onclick="window.deletePhoto('${id}', '${photo.storagePath}')">🗑 Sil</button>
+                <button class="delete-btn" onclick="window.deletePhoto('${id}')">🗑 Sil</button>
             </div>
         `;
 
@@ -306,12 +336,10 @@
         loadedMarkers[id] = marker;
     }
 
-    window.deletePhoto = async function(docId, storagePath) {
+    window.deletePhoto = async function(docId) {
         if (confirm("Bu fotoğrafı haritadan silmek istediğinize emin misiniz?")) {
             try {
                 await deleteDoc(doc(db, "ankara_markers", docId));
-                const fileRef = ref(storage, storagePath);
-                await deleteObject(fileRef);
             } catch (err) {
                 console.error("Silme hatası:", err);
             }
