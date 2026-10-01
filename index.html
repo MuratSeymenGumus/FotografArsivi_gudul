@@ -410,7 +410,7 @@
 
     let map = L.map('map', {
         center: [39.9334, 32.8597],
-        zoom: 10,
+        zoom: 11,
         layers: [osmHot]
     });
 
@@ -518,7 +518,6 @@
             map.options.minZoom = 9;
             map.options.maxBoundsViscosity = 1.0;
         } else {
-            // DİĞER YENİ PROJELER İÇİN SERBEST HARİTA SIKILIKLARI
             map.setMaxBounds(null);
             map.options.minZoom = 2;
             map.options.maxBoundsViscosity = 0.0;
@@ -536,7 +535,7 @@
             if (!map.hasLayer(osmHot)) {
                 map.addLayer(osmHot);
             }
-            map.setView([39.9334, 32.8597], 10);
+            map.setView([39.9334, 32.8597], 11);
         }
 
         drawingLayerGroup.clearLayers();
@@ -637,7 +636,6 @@
                 const latitude = convertDMSToDD(lat[0], lat[1], lat[2], latRef);
                 const longitude = convertDMSToDD(lon[0], lon[1], lon[2], lonRef);
                 
-                // Güdül sınır kontrolü
                 if (currentProjectId === 'gudul_default' && !ankaraBounds.contains([latitude, longitude])) {
                     alert("Fotoğraf Ankara sınırları dışında! Lütfen Ankara sınırları içinden bir fotoğraf seçin.");
                     return;
@@ -658,10 +656,11 @@
         }
     });
 
+    // FOTOĞRAF SEÇİLDİĞİNDE VEYA TIKLANDIĞINDA YAKINLAŞMA SEVİYESİ (ZOOM 16 - DETAYLI SOKAK GÖRÜNÜMÜ)
     function updateTempMarker(lat, lng) {
         if (tempMarker) map.removeLayer(tempMarker);
         tempMarker = L.marker([lat, lng], { pane: 'photoPane' }).addTo(map).bindPopup("Seçilen Konum").openPopup();
-        map.setView([lat, lng], 13);
+        map.setView([lat, lng], 16);
     }
 
     document.getElementById('saveBtn').addEventListener('click', async function() {
