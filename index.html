@@ -54,6 +54,20 @@
             outline: none;
             cursor: pointer;
         }
+        .btn-delete-project {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-delete-project:hover {
+            background-color: #dc2626;
+        }
 
         /* ANA DÜZEN */
         .main-container {
@@ -106,7 +120,7 @@
             border-radius: 10px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
-            background-color: #f8fafc;
+            background-color: #0f172a;
         }
 
         .panel-section { margin-top: 14px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
@@ -114,7 +128,7 @@
         
         .btn-group-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
         .filter-btn {
-            padding: 5px 10px;
+            padding: 6px 12px;
             border: none;
             border-radius: 20px;
             color: white;
@@ -122,6 +136,9 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         .filter-btn.disabled { opacity: 0.3; filter: grayscale(1); }
 
@@ -169,8 +186,21 @@
             background: white;
             padding: 28px;
             border-radius: 14px;
-            width: 440px;
+            width: 460px;
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .group-edit-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
         }
 
         /* İKON DİZAYNI */
@@ -187,7 +217,9 @@
 
         .popup-container { text-align: center; }
         .popup-img { max-width: 200px; max-height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; }
-        .delete-btn { background-color: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .popup-group-select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; margin-bottom: 6px; width: 100%; }
+        .popup-action-btn { background-color: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 4px; font-weight: 600; width: 100%; }
+        .delete-btn { background-color: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%; }
         .status-text { margin-top: 6px; font-weight: 600; color: #10b981; text-align: center; font-size: 12px; }
     </style>
 </head>
@@ -202,9 +234,10 @@
         <label style="font-size: 12px; color: #94a3b8;">Çalışma Sayfası:</label>
         <select id="projectSelect">
             <option value="SELECT_INITIAL" disabled selected>-- Çalışma Seçin --</option>
-            <option value="gudul_default">Ankara - Güdül Çalışması</option>
+            <option value="ankara_markers">Ankara - Güdül Çalışması</option>
             <option value="NEW_PROJECT_OPTION">+ Yeni Çalışma Sayfası Aç...</option>
         </select>
+        <button class="btn-delete-project" onclick="deleteCurrentProject()" title="Seçili Çalışma Sayfasını Sil">🗑 Projeyi Sil</button>
     </div>
 </div>
 
@@ -219,12 +252,9 @@
         </div>
 
         <div class="form-group">
-            <label>Çalışma Grubu:</label>
+            <label>Çalışma Grubu / Tema:</label>
             <select id="groupSelect">
-                <option value="grup1">Grup 1 (Kırmızı)</option>
-                <option value="grup2">Grup 2 (Mavi)</option>
-                <option value="grup3">Grup 3 (Yeşil)</option>
-                <option value="grup4">Grup 4 (Turuncu)</option>
+                <!-- Dinamik Gruplar Buraya Eklenecek -->
             </select>
         </div>
 
@@ -248,10 +278,10 @@
         </div>
 
         <div class="form-group">
-            <label>Konum (Lat / Lon):</label>
+            <label>Konum (Y / Lat, X / Lon):</label>
             <div style="display: flex; gap: 4px;">
-                <input type="text" id="latInput" placeholder="Lat" readonly>
-                <input type="text" id="lngInput" placeholder="Lon" readonly>
+                <input type="text" id="latInput" placeholder="Y / Lat" readonly>
+                <input type="text" id="lngInput" placeholder="X / Lon" readonly>
             </div>
         </div>
 
@@ -259,12 +289,12 @@
         <div id="statusText" class="status-text"></div>
 
         <div class="panel-section">
-            <div class="panel-title">Grup Filtreleri</div>
-            <div class="btn-group-filter">
-                <button class="filter-btn" style="background:#ef4444;" onclick="toggleGroup('grup1', this)">Grup 1</button>
-                <button class="filter-btn" style="background:#3b82f6;" onclick="toggleGroup('grup2', this)">Grup 2</button>
-                <button class="filter-btn" style="background:#10b981;" onclick="toggleGroup('grup3', this)">Grup 3</button>
-                <button class="filter-btn" style="background:#f97316;" onclick="toggleGroup('grup4', this)">Grup 4</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="panel-title" style="margin: 0;">Grup Filtreleri</div>
+                <button onclick="openManageGroupsModal()" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;">✏️ Düzenle / Ekle</button>
+            </div>
+            <div class="btn-group-filter" id="groupFilterButtons">
+                <!-- Dinamik Filtre Butonları Buraya Geliyor -->
             </div>
         </div>
     </div>
@@ -329,7 +359,7 @@
         <div class="form-group">
             <label>Kayıtlı Çalışmalar:</label>
             <select id="modalProjectSelect" style="padding: 10px; font-size:13px;">
-                <option value="gudul_default">Ankara - Güdül Çalışması</option>
+                <option value="ankara_markers">Ankara - Güdül Çalışması</option>
             </select>
         </div>
 
@@ -355,18 +385,39 @@
             <label>Harita Altlık Tipi Seçin:</label>
             <select id="newMapType" onchange="toggleCustomMapInput()">
                 <option value="osm">OpenStreetMap (Standart Uydu/Sokak Haritası)</option>
-                <option value="custom_image">Özel Görsel / Pafta Yükle (PNG/JPG)</option>
+                <option value="custom_image">Özel Görsel / Orijinal En-Boy Oranlı Pafta Yükle</option>
             </select>
         </div>
 
         <div class="form-group" id="customMapGroup" style="display: none;">
-            <label>Pafta Görseli Seçin:</label>
+            <label>Pafta Görseli Seçin (PNG/JPG):</label>
             <input type="file" id="customMapFile" accept="image/*">
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 20px;">
-            <button class="btn-primary" onclick="createNewProject()" style="background:#10b981;">Farklı Kaydet & Başlat</button>
+            <button class="btn-primary" id="createProjectBtn" onclick="createNewProject()" style="background:#10b981;">Kaydet & Başlat</button>
             <button class="btn-primary" onclick="closeNewProjectModal()" style="background:#64748b;">İptal</button>
+        </div>
+    </div>
+</div>
+
+<!-- GRUPLARI DÜZENLE / DİNAMİK YÖNETİM MODALI -->
+<div class="modal-overlay" id="manageGroupsModal" style="display: none;">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 10px;">✏️ Grupları İsimlendir ve Renklendir</h3>
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Mevcut grupların isimlerini değiştirebilir, yeni renk atayabilir veya yeni gruplar ekleyebilirsiniz.</p>
+        
+        <div id="groupsListContainer">
+            <!-- Grup düzenleme elemanları dinamik yüklenecek -->
+        </div>
+
+        <button onclick="addNewGroupItem()" style="width:100%; background:#f1f5f9; color:#0f172a; border:1px dashed #cbd5e1; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px; margin-top:8px;">
+            + Yeni Grup / Tema Ekle
+        </button>
+
+        <div style="display: flex; gap: 8px; margin-top: 20px;">
+            <button class="btn-primary" onclick="saveGroupChanges()" style="background:#10b981;">Kaydet & Uygula</button>
+            <button class="btn-primary" onclick="closeManageGroupsModal()" style="background:#64748b;">İptal</button>
         </div>
     </div>
 </div>
@@ -377,7 +428,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDHfCsrY2yFi6sXHDPkvgNKxQTU0pP7gm4",
@@ -392,15 +443,196 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let currentProjectId = null;
+    let currentProjectId = "ankara_markers";
     let projectsStore = {
-        'gudul_default': { name: 'Güdül Çalışması', type: 'osm', customMapUrl: null }
+        'ankara_markers': { name: 'Güdül Çalışması', type: 'osm', customMapUrl: null }
     };
 
-    const groupColors = { 'grup1': '#ef4444', 'grup2': '#3b82f6', 'grup3': '#10b981', 'grup4': '#f97316' };
-    const activeGroups = { 'grup1': true, 'grup2': true, 'grup3': true, 'grup4': true };
+    let customGroups = [
+        { id: 'grup1', name: 'Grup 1', color: '#ef4444' },
+        { id: 'grup2', name: 'Grup 2', color: '#3b82f6' },
+        { id: 'grup3', name: 'Grup 3', color: '#10b981' },
+        { id: 'grup4', name: 'Grup 4', color: '#f97316' }
+    ];
 
-    // ANKARA SINIRLARI
+    const activeGroups = {};
+
+    // FIREBASE'DEN TÜM PROJELERİ CANLI ÇEKME & DOLDURMA
+    async function fetchDatabaseProjects() {
+        try {
+            const querySnapshot = await getDocs(collection(db, "projects"));
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                projectsStore[docSnap.id] = data;
+            });
+            updateProjectSelectOptions();
+        } catch (e) {
+            console.error("Projeler yüklenirken hata:", e);
+        }
+    }
+
+    function updateProjectSelectOptions() {
+        const select = document.getElementById('projectSelect');
+        const modalSelect = document.getElementById('modalProjectSelect');
+
+        select.innerHTML = '<option value="SELECT_INITIAL" disabled selected>-- Çalışma Seçin --</option>';
+        modalSelect.innerHTML = '';
+
+        Object.keys(projectsStore).forEach(pId => {
+            const p = projectsStore[pId];
+
+            const opt1 = document.createElement('option');
+            opt1.value = pId;
+            opt1.innerText = p.name;
+            select.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = pId;
+            opt2.innerText = p.name;
+            modalSelect.appendChild(opt2);
+        });
+
+        const newOpt = document.createElement('option');
+        newOpt.value = "NEW_PROJECT_OPTION";
+        newOpt.innerText = "+ Yeni Çalışma Sayfası Aç...";
+        select.appendChild(newOpt);
+
+        if (currentProjectId && projectsStore[currentProjectId]) {
+            select.value = currentProjectId;
+        }
+    }
+
+    // PROJE SİLME İŞLEMİ
+    window.deleteCurrentProject = async function() {
+        if (!currentProjectId) {
+            alert("Lütfen silmek istediğiniz projeyi seçin!");
+            return;
+        }
+
+        if (currentProjectId === "ankara_markers") {
+            alert("Varsayılan ana proje (Ankara - Güdül Çalışması) korumalıdır ve silinemez!");
+            return;
+        }
+
+        const projectName = projectsStore[currentProjectId] ? projectsStore[currentProjectId].name : "Bu projeyi";
+
+        if (confirm(`"${projectName}" isimli çalışma sayfasını ve bu sayfaya ait tüm fotoğrafları kalıcı olarak silmek istediğinize emin misiniz?`)) {
+            try {
+                // 1. Projeye ait tüm fotoğrafları sil
+                const targetCollection = "markers_" + currentProjectId;
+                const photosSnap = await getDocs(collection(db, targetCollection));
+                photosSnap.forEach(async (photoDoc) => {
+                    await deleteDoc(doc(db, targetCollection, photoDoc.id));
+                });
+
+                // 2. Proje tanımını sil
+                await deleteDoc(doc(db, "projects", currentProjectId));
+
+                delete projectsStore[currentProjectId];
+
+                alert("Proje başarıyla silindi!");
+
+                // 3. Varsayılan projeye dön
+                currentProjectId = "ankara_markers";
+                updateProjectSelectOptions();
+                switchProject("ankara_markers");
+
+            } catch (error) {
+                console.error("Proje silme hatası:", error);
+                alert("Proje silinirken bir hata oluştu!");
+            }
+        }
+    };
+
+    function renderGroupsUI() {
+        const select = document.getElementById('groupSelect');
+        const filterContainer = document.getElementById('groupFilterButtons');
+        
+        select.innerHTML = '';
+        filterContainer.innerHTML = '';
+
+        customGroups.forEach(g => {
+            if (activeGroups[g.id] === undefined) {
+                activeGroups[g.id] = true;
+            }
+
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.innerText = g.name;
+            select.appendChild(opt);
+
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn' + (activeGroups[g.id] ? '' : ' disabled');
+            btn.style.backgroundColor = g.color;
+            btn.innerText = g.name;
+            btn.onclick = () => toggleGroup(g.id, btn);
+
+            filterContainer.appendChild(btn);
+        });
+    }
+
+    window.openManageGroupsModal = function() {
+        const container = document.getElementById('groupsListContainer');
+        container.innerHTML = '';
+
+        customGroups.forEach((g) => {
+            const item = document.createElement('div');
+            item.className = 'group-edit-item';
+            item.innerHTML = `
+                <input type="text" class="group-name-input" data-id="${g.id}" value="${g.name}" style="flex:1; padding:6px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px;">
+                <input type="color" class="group-color-input" data-id="${g.id}" value="${g.color}" style="width:35px; height:32px; border:none; cursor:pointer;">
+                <button onclick="deleteGroupItem('${g.id}')" style="background:#ef4444; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-size:11px;">🗑 Sil</button>
+            `;
+            container.appendChild(item);
+        });
+
+        document.getElementById('manageGroupsModal').style.display = 'flex';
+    };
+
+    window.closeManageGroupsModal = function() {
+        document.getElementById('manageGroupsModal').style.display = 'none';
+    };
+
+    window.addNewGroupItem = function() {
+        const newId = 'grp_' + Date.now();
+        customGroups.push({ id: newId, name: 'Yeni Grup', color: '#8b5cf6' });
+        openManageGroupsModal();
+    };
+
+    window.deleteGroupItem = function(id) {
+        if (customGroups.length <= 1) {
+            alert("En az bir adet grup bulunmalıdır!");
+            return;
+        }
+        customGroups = customGroups.filter(g => g.id !== id);
+        openManageGroupsModal();
+    };
+
+    window.saveGroupChanges = function() {
+        const nameInputs = document.querySelectorAll('.group-name-input');
+        const colorInputs = document.querySelectorAll('.group-color-input');
+
+        nameInputs.forEach(input => {
+            const id = input.getAttribute('data-id');
+            const newName = input.value.trim() || 'İsimsiz Grup';
+            const groupObj = customGroups.find(g => g.id === id);
+            if (groupObj) groupObj.name = newName;
+        });
+
+        colorInputs.forEach(input => {
+            const id = input.getAttribute('data-id');
+            const newColor = input.value;
+            const groupObj = customGroups.find(g => g.id === id);
+            if (groupObj) groupObj.color = newColor;
+        });
+
+        renderGroupsUI();
+        closeManageGroupsModal();
+        refreshAllMarkerStyles();
+    };
+
+    renderGroupsUI();
+
     const ankaraBounds = L.latLngBounds(
         L.latLng(38.8000, 31.3000),
         L.latLng(40.7000, 33.8000)
@@ -416,13 +648,11 @@
 
     let currentCustomOverlay = null;
 
-    // PANE ÖNCELİKLERİ
     map.createPane('drawPane');
     map.getPane('drawPane').style.zIndex = 400; 
     map.createPane('photoPane');
     map.getPane('photoPane').style.zIndex = 650; 
 
-    // GEOMAN ÇİZİM ARAÇLARI
     map.pm.addControls({
         position: 'topleft',
         drawMarker: false,
@@ -473,7 +703,6 @@
         }
     };
 
-    // HOŞ GELDİNİZ PENCERESİ YÖNETİMİ
     window.loadSelectedFromModal = function() {
         const val = document.getElementById('modalProjectSelect').value;
         document.getElementById('projectSelect').value = val;
@@ -505,21 +734,20 @@
         currentProjectId = projectId;
         const pData = projectsStore[projectId] || { name: 'Özel Çalışma', type: 'osm' };
 
-        document.getElementById('projectHeaderTitle').innerHTML = `🗺️ Şehir Planlama <span>- ${pData.name}</span>`;
+        document.getElementById('projectHeaderTitle').innerHTML = `MAP Şehir Planlama <span>- ${pData.name}</span>`;
 
         if (currentCustomOverlay) {
             map.removeLayer(currentCustomOverlay);
             currentCustomOverlay = null;
         }
 
-        // GÜDÜL ÇALIŞMASI İÇİN ANKARA KİLİDİ
-        if (projectId === 'gudul_default') {
+        if (projectId === 'ankara_markers') {
             map.setMaxBounds(ankaraBounds);
             map.options.minZoom = 9;
             map.options.maxBoundsViscosity = 1.0;
         } else {
             map.setMaxBounds(null);
-            map.options.minZoom = 2;
+            map.options.minZoom = 1;
             map.options.maxBoundsViscosity = 0.0;
         }
 
@@ -528,9 +756,27 @@
                 map.removeLayer(osmHot);
             }
 
-            const bounds = L.latLngBounds(L.latLng(39.85, 32.70), L.latLng(40.05, 33.00));
-            currentCustomOverlay = L.imageOverlay(pData.customMapUrl, bounds, { pane: 'drawPane' }).addTo(map);
-            map.fitBounds(bounds);
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                const w = tempImg.naturalWidth || tempImg.width || 1000;
+                const h = tempImg.naturalHeight || tempImg.height || 1000;
+                const aspectRatio = h / w;
+
+                const centerLat = 39.9334;
+                const centerLng = 32.8597;
+                
+                const lngSpan = 0.20; 
+                const latSpan = lngSpan * aspectRatio;
+
+                const bounds = L.latLngBounds(
+                    L.latLng(centerLat - (latSpan / 2), centerLng - (lngSpan / 2)),
+                    L.latLng(centerLat + (latSpan / 2), centerLng + (lngSpan / 2))
+                );
+
+                currentCustomOverlay = L.imageOverlay(pData.customMapUrl, bounds, { pane: 'drawPane' }).addTo(map);
+                map.fitBounds(bounds);
+            };
+            tempImg.src = pData.customMapUrl;
         } else {
             if (!map.hasLayer(osmHot)) {
                 map.addLayer(osmHot);
@@ -563,38 +809,42 @@
     };
 
     window.createNewProject = async function() {
-        const name = document.getElementById('newProjectName').value;
+        const name = document.getElementById('newProjectName').value.trim();
         const mapType = document.getElementById('newMapType').value;
         const customFile = document.getElementById('customMapFile').files[0];
+        const btn = document.getElementById('createProjectBtn');
 
         if (!name) { alert("Lütfen çalışma ismi girin!"); return; }
 
         let customMapBase64 = null;
         if (mapType === 'custom_image' && customFile) {
-            customMapBase64 = await processImage(customFile);
+            btn.innerText = "Yükleniyor & İşleniyor...";
+            btn.disabled = true;
+            customMapBase64 = await processHighResMapImage(customFile);
         }
 
         const projectId = 'proj_' + Date.now();
-        projectsStore[projectId] = { name: name, type: mapType, customMapUrl: customMapBase64 };
+        const newProjObj = { name: name, type: mapType, customMapUrl: customMapBase64 };
 
-        const select = document.getElementById('projectSelect');
-        const option = document.createElement('option');
-        option.value = projectId;
-        option.innerText = name;
-        select.insertBefore(option, select.lastElementChild);
+        try {
+            await setDoc(doc(db, "projects", projectId), newProjObj);
+            projectsStore[projectId] = newProjObj;
 
-        const modalSelect = document.getElementById('modalProjectSelect');
-        const modalOption = document.createElement('option');
-        modalOption.value = projectId;
-        modalOption.innerText = name;
-        modalSelect.appendChild(modalOption);
+            updateProjectSelectOptions();
+            document.getElementById('projectSelect').value = projectId;
+            document.getElementById('newProjectModal').style.display = 'none';
+            
+            switchProject(projectId);
 
-        select.value = projectId;
-        document.getElementById('newProjectModal').style.display = 'none';
-        switchProject(projectId);
-
-        document.getElementById('newProjectName').value = '';
-        document.getElementById('customMapFile').value = '';
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('customMapFile').value = '';
+        } catch (err) {
+            console.error("Proje kaydetme hatası:", err);
+            alert("Yeni çalışma alanı kaydedilemedi! Lütfen tekrar deneyin.");
+        } finally {
+            btn.innerText = "Kaydet & Başlat";
+            btn.disabled = false;
+        }
     };
 
     let tempMarker = null;
@@ -623,6 +873,41 @@
         });
     }
 
+    function processHighResMapImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    const max_size = 1800; 
+                    if (width > max_size || height > max_size) {
+                        if (width > height) {
+                            height *= max_size / width;
+                            width = max_size;
+                        } else {
+                            width *= max_size / height;
+                            height = max_size;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.75));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     document.getElementById('imageInput').addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -636,7 +921,7 @@
                 const latitude = convertDMSToDD(lat[0], lat[1], lat[2], latRef);
                 const longitude = convertDMSToDD(lon[0], lon[1], lon[2], lonRef);
                 
-                if (currentProjectId === 'gudul_default' && !ankaraBounds.contains([latitude, longitude])) {
+                if (currentProjectId === 'ankara_markers' && !ankaraBounds.contains([latitude, longitude])) {
                     alert("Fotoğraf Ankara sınırları dışında! Lütfen Ankara sınırları içinden bir fotoğraf seçin.");
                     return;
                 }
@@ -656,11 +941,10 @@
         }
     });
 
-    // FOTOĞRAF SEÇİLDİĞİNDE VEYA TIKLANDIĞINDA YAKINLAŞMA SEVİYESİ (ZOOM 16 - DETAYLI SOKAK GÖRÜNÜMÜ)
     function updateTempMarker(lat, lng) {
         if (tempMarker) map.removeLayer(tempMarker);
         tempMarker = L.marker([lat, lng], { pane: 'photoPane' }).addTo(map).bindPopup("Seçilen Konum").openPopup();
-        map.setView([lat, lng], 16);
+        map.setView([lat, lng], map.getZoom() > 14 ? map.getZoom() : 14);
     }
 
     document.getElementById('saveBtn').addEventListener('click', async function() {
@@ -683,7 +967,9 @@
 
         try {
             statusText.innerText = "Yükleniyor...";
-            await addDoc(collection(db, "markers_" + currentProjectId), {
+            const targetCollection = currentProjectId === "ankara_markers" ? "ankara_markers" : ("markers_" + currentProjectId);
+
+            await addDoc(collection(db, targetCollection), {
                 uploader: uploader,
                 group: group,
                 direction: direction,
@@ -711,12 +997,17 @@
         if (unsubscribeFirestore) unsubscribeFirestore();
 
         if (currentProjectId) {
-            unsubscribeFirestore = onSnapshot(collection(db, "markers_" + currentProjectId), (snapshot) => {
+            const targetCollection = currentProjectId === "ankara_markers" ? "ankara_markers" : ("markers_" + currentProjectId);
+
+            unsubscribeFirestore = onSnapshot(collection(db, targetCollection), (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     const photoData = change.doc.data();
                     const docId = change.doc.id;
 
-                    if (change.type === "added") {
+                    if (change.type === "added" || change.type === "modified") {
+                        if (loadedMarkers[docId]) {
+                            map.removeLayer(loadedMarkers[docId]);
+                        }
                         markerDataStore[docId] = photoData;
                         addMarkerToMap(docId, photoData);
                     }
@@ -733,7 +1024,9 @@
     }
 
     function addMarkerToMap(id, photo) {
-        const color = groupColors[photo.group] || '#3b82f6';
+        const mGroupKey = photo.group || 'grup1';
+        const groupObj = customGroups.find(g => g.id === mGroupKey) || { color: '#3b82f6', name: 'Grup' };
+        const color = groupObj.color;
         const angle = photo.direction || 0;
 
         const customIcon = L.divIcon({
@@ -748,32 +1041,74 @@
             iconAnchor: [21, 21]
         });
 
+        let groupOptionsHtml = '';
+        customGroups.forEach(g => {
+            const selected = g.id === mGroupKey ? 'selected' : '';
+            groupOptionsHtml += `<option value="${g.id}" ${selected}>${g.name}</option>`;
+        });
+
         const popupContent = `
             <div class="popup-container">
                 <img src="${photo.imageUrl}" class="popup-img"><br>
-                <strong>Grup:</strong> ${photo.group.toUpperCase()}<br>
                 <strong>Yükleyen:</strong> ${photo.uploader}<br>
                 <small>Açı: ${angle}° | Tarih: ${photo.date}</small><br>
+                
+                <div style="margin-top: 6px;">
+                    <label style="font-size:10px; font-weight:bold; color:#475569; display:block; text-align:left; margin-bottom:2px;">GRUP DEĞİŞTİR:</label>
+                    <select id="pop_group_${id}" class="popup-group-select">
+                        ${groupOptionsHtml}
+                    </select>
+                    <button class="popup-action-btn" onclick="window.updatePhotoGroup('${id}')">💾 Grubu Güncelle</button>
+                </div>
+
                 <button class="delete-btn" onclick="window.deletePhoto('${id}')">🗑 Sil</button>
             </div>
         `;
 
         const marker = L.marker([photo.lat, photo.lng], { icon: customIcon, pane: 'photoPane' });
 
-        if (activeGroups[photo.group]) {
+        if (activeGroups[mGroupKey] !== false) {
             marker.addTo(map);
         }
         marker.bindPopup(popupContent);
         loadedMarkers[id] = marker;
     }
 
-    window.toggleGroup = function(groupName, btnElement) {
-        activeGroups[groupName] = !activeGroups[groupName];
-        btnElement.classList.toggle('disabled', !activeGroups[groupName]);
+    window.updatePhotoGroup = async function(docId) {
+        const selectElem = document.getElementById(`pop_group_${docId}`);
+        if (!selectElem) return;
+
+        const newGroupId = selectElem.value;
+        const targetCollection = currentProjectId === "ankara_markers" ? "ankara_markers" : ("markers_" + currentProjectId);
+
+        try {
+            await updateDoc(doc(db, targetCollection, docId), {
+                group: newGroupId
+            });
+            alert("Fotoğrafın grubu başarıyla güncellendi!");
+        } catch (error) {
+            console.error("Grup güncelleme hatası:", error);
+            alert("Grup güncellenirken bir hata oluştu!");
+        }
+    };
+
+    function refreshAllMarkerStyles() {
+        Object.keys(markerDataStore).forEach(id => {
+            if (loadedMarkers[id]) {
+                map.removeLayer(loadedMarkers[id]);
+            }
+            addMarkerToMap(id, markerDataStore[id]);
+        });
+    }
+
+    window.toggleGroup = function(groupId, btnElement) {
+        activeGroups[groupId] = !activeGroups[groupId];
+        btnElement.classList.toggle('disabled', !activeGroups[groupId]);
 
         Object.keys(markerDataStore).forEach(id => {
-            if (markerDataStore[id].group === groupName) {
-                if (activeGroups[groupName]) {
+            const mGroup = markerDataStore[id].group || 'grup1';
+            if (mGroup === groupId) {
+                if (activeGroups[groupId]) {
                     loadedMarkers[id].addTo(map);
                 } else {
                     map.removeLayer(loadedMarkers[id]);
@@ -784,7 +1119,8 @@
 
     window.deletePhoto = async function(docId) {
         if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
-            await deleteDoc(doc(db, "markers_" + currentProjectId, docId));
+            const targetCollection = currentProjectId === "ankara_markers" ? "ankara_markers" : ("markers_" + currentProjectId);
+            await deleteDoc(doc(db, targetCollection, docId));
         }
     };
 
@@ -793,6 +1129,9 @@
         if (direction === "S" || direction === "W") dd = dd * -1;
         return dd;
     }
+
+    // İLK AÇILIŞTA PROJELERİ VERİTABANINDAN YÜKLE
+    fetchDatabaseProjects();
 </script>
 
 </body>
