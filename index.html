@@ -10,7 +10,17 @@
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
     
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* KOD & METİN KOPYALAMA ENGELİ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f4f6f9;
@@ -18,6 +28,14 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        /* Input alanlarında metin girişine izin ver */
+        input, select, textarea {
+            -webkit-user-select: auto !important;
+            -moz-user-select: auto !important;
+            -ms-user-select: auto !important;
+            user-select: auto !important;
         }
 
         /* ÜST HEADER BAR */
@@ -54,20 +72,6 @@
             outline: none;
             cursor: pointer;
         }
-        .btn-delete-project {
-            background-color: #ef4444;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-delete-project:hover {
-            background-color: #dc2626;
-        }
 
         /* ANA DÜZEN */
         .main-container {
@@ -89,7 +93,12 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             overflow-y: auto;
             border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
+
+        .panel-content-top { flex: 1; }
 
         h3 { font-size: 15px; margin-bottom: 12px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; }
 
@@ -121,6 +130,14 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
             background-color: #0f172a;
+        }
+
+        /* GÖRSEL PERFORMANS VE GPU HIZLANDIRMA OPTİMİZASYONLARI */
+        .leaflet-image-layer {
+            will-change: transform;
+            transform: translateZ(0);
+            image-rendering: -webkit-optimize-contrast !important;
+            image-rendering: crisp-edges !important;
         }
 
         .panel-section { margin-top: 14px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
@@ -155,7 +172,24 @@
             margin-bottom: 6px;
         }
 
-        /* ALT FOOTER BAR */
+        .btn-danger-zone {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #fca5a5;
+            text-align: center;
+        }
+        .btn-danger-link {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 11px;
+            cursor: pointer;
+            text-decoration: underline;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .btn-danger-link:hover { opacity: 1; }
+
         .bottom-footer {
             background-color: #0f172a;
             color: #94a3b8;
@@ -167,12 +201,8 @@
             border-top: 1px solid #1e293b;
             z-index: 1000;
         }
-        .bottom-footer strong {
-            color: #38bdf8;
-            font-weight: 600;
-        }
+        .bottom-footer strong { color: #38bdf8; font-weight: 600; }
 
-        /* MODAL POP-UP */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -203,8 +233,7 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* İKON DİZAYNI */
-        .marker-container { position: relative; width: 42px; height: 42px; }
+        .marker-container { position: relative; width: 42px; height: 42px; will-change: transform; }
         .photo-marker {
             width: 36px; height: 36px; border-radius: 50%; border: 3px solid;
             box-shadow: 0 3px 6px rgba(0,0,0,0.3); object-fit: cover; background-color: white;
@@ -217,9 +246,9 @@
 
         .popup-container { text-align: center; }
         .popup-img { max-width: 200px; max-height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; }
-        .popup-group-select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; margin-bottom: 6px; width: 100%; }
-        .popup-action-btn { background-color: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 4px; font-weight: 600; width: 100%; }
-        .delete-btn { background-color: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%; }
+        .popup-group-select { padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; margin-bottom: 4px; width: 100%; }
+        .popup-action-btn { background-color: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 6px; font-weight: 600; width: 100%; }
+        .delete-btn { background-color: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%; margin-top: 4px; }
         .status-text { margin-top: 6px; font-weight: 600; color: #10b981; text-align: center; font-size: 12px; }
     </style>
 </head>
@@ -228,7 +257,7 @@
 <!-- ÜST HEADER BAR -->
 <div class="top-navbar">
     <div class="navbar-brand" id="projectHeaderTitle">
-        🗺️ Şehir Planlama <span>Ortak Harita Platformu</span>
+        MAP Şehir Planlama <span>Ortak Harita Platformu</span>
     </div>
     <div class="project-selector">
         <label style="font-size: 12px; color: #94a3b8;">Çalışma Sayfası:</label>
@@ -237,64 +266,61 @@
             <option value="ankara_markers">Ankara - Güdül Çalışması</option>
             <option value="NEW_PROJECT_OPTION">+ Yeni Çalışma Sayfası Aç...</option>
         </select>
-        <button class="btn-delete-project" onclick="deleteCurrentProject()" title="Seçili Çalışma Sayfasını Sil">🗑 Projeyi Sil</button>
     </div>
 </div>
 
 <div class="main-container">
     <!-- SOL PANEL: FOTOĞRAF EKLEME -->
     <div class="sidebar">
-        <h3>📍 Fotoğraf İğnele</h3>
-        
-        <div class="form-group">
-            <label>Öğrenci / Plancı Adı:</label>
-            <input type="text" id="uploaderName" placeholder="Ad Soyad">
-        </div>
-
-        <div class="form-group">
-            <label>Çalışma Grubu / Tema:</label>
-            <select id="groupSelect">
-                <!-- Dinamik Gruplar Buraya Eklenecek -->
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Fotoğraf Seç:</label>
-            <input type="file" id="imageInput" accept="image/*">
-        </div>
-
-        <div class="form-group">
-            <label>Çekim Yönü / Açısı:</label>
-            <select id="directionSelect">
-                <option value="0">Kuzey (0°)</option>
-                <option value="45">Kuzeydoğu (45°)</option>
-                <option value="90">Doğu (90°)</option>
-                <option value="135">Güneydoğu (135°)</option>
-                <option value="180">Güney (180°)</option>
-                <option value="225">Güneybatı (225°)</option>
-                <option value="270">Batı (270°)</option>
-                <option value="315">Kuzeybatı (315°)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Konum (Y / Lat, X / Lon):</label>
-            <div style="display: flex; gap: 4px;">
-                <input type="text" id="latInput" placeholder="Y / Lat" readonly>
-                <input type="text" id="lngInput" placeholder="X / Lon" readonly>
+        <div class="panel-content-top">
+            <h3>📍 Fotoğraf İğnele</h3>
+            
+            <div class="form-group">
+                <label>Öğrenci / Plancı Adı:</label>
+                <input type="text" id="uploaderName" placeholder="Ad Soyad">
             </div>
-        </div>
 
-        <button class="btn-primary" id="saveBtn">Fotoğrafı Haritaya Ekle</button>
-        <div id="statusText" class="status-text"></div>
-
-        <div class="panel-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div class="panel-title" style="margin: 0;">Grup Filtreleri</div>
-                <button onclick="openManageGroupsModal()" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;">✏️ Düzenle / Ekle</button>
+            <div class="form-group">
+                <label>Çalışma Grubu / Tema:</label>
+                <select id="groupSelect"></select>
             </div>
-            <div class="btn-group-filter" id="groupFilterButtons">
-                <!-- Dinamik Filtre Butonları Buraya Geliyor -->
+
+            <div class="form-group">
+                <label>Fotoğraf Seç:</label>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+
+            <div class="form-group">
+                <label>Çekim Yönü / Açısı:</label>
+                <select id="directionSelect">
+                    <option value="0">Kuzey (0°)</option>
+                    <option value="45">Kuzeydoğu (45°)</option>
+                    <option value="90">Doğu (90°)</option>
+                    <option value="135">Güneydoğu (135°)</option>
+                    <option value="180">Güney (180°)</option>
+                    <option value="225">Güneybatı (225°)</option>
+                    <option value="270">Batı (270°)</option>
+                    <option value="315">Kuzeybatı (315°)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Konum (Y / Lat, X / Lon):</label>
+                <div style="display: flex; gap: 4px;">
+                    <input type="text" id="latInput" placeholder="Y / Lat" readonly>
+                    <input type="text" id="lngInput" placeholder="X / Lon" readonly>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="saveBtn">Fotoğrafı Haritaya Ekle</button>
+            <div id="statusText" class="status-text"></div>
+
+            <div class="panel-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div class="panel-title" style="margin: 0;">Grup Filtreleri</div>
+                    <button onclick="openManageGroupsModal()" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold;">✏️ Düzenle / Ekle</button>
+                </div>
+                <div class="btn-group-filter" id="groupFilterButtons"></div>
             </div>
         </div>
     </div>
@@ -304,53 +330,58 @@
 
     <!-- SAĞ PANEL: ÇİZİM & KATMANLAR -->
     <div class="right-panel">
-        <h3>🎨 Çizim & Katman Ayarları</h3>
-        
-        <div class="form-group">
-            <label>Çizgi Rengi:</label>
-            <input type="color" id="lineColor" value="#ef4444" style="height:35px; cursor:pointer;">
-        </div>
-
-        <div class="form-group">
-            <label>Çizgi Kalınlığı:</label>
-            <select id="lineWeight">
-                <option value="0.5">Çok İnce (0.5px)</option>
-                <option value="1">İnce (1px)</option>
-                <option value="2">Normal (2px)</option>
-                <option value="4" selected>Orta (4px)</option>
-                <option value="7">Kalın (7px)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Çizgi Tipi:</label>
-            <select id="lineStyle">
-                <option value="solid">Düz Çizgi (——)</option>
-                <option value="dashed">Kesikli Çizgi (- - -)</option>
-            </select>
-        </div>
-
-        <div class="panel-section">
-            <div class="panel-title">Görünürlük Kontrolü</div>
-            <button class="btn-toggle" id="toggleDrawBtn" onclick="toggleDrawings()">Çizimleri Gizle/Göster</button>
-            <button class="btn-toggle" id="toggleOsmBtn" onclick="toggleOsmLayer()" style="background:#0284c7;">OpenStreetMap Altlığını Aç/Kapat</button>
-        </div>
-
-        <div class="panel-section">
-            <div class="panel-title">Yüklü Pafta / Görsel Katmanları</div>
-            <div class="btn-group-filter">
-                <button class="filter-btn" style="background:#8b5cf6;" id="customOverlayBtn" onclick="toggleCustomOverlay()">Görsel Paftayı Gizle/Göster</button>
+        <div class="panel-content-top">
+            <h3>🎨 Çizim & Katman Ayarları</h3>
+            
+            <div class="form-group">
+                <label>Çizgi Rengi:</label>
+                <input type="color" id="lineColor" value="#ef4444" style="height:35px; cursor:pointer;">
             </div>
+
+            <div class="form-group">
+                <label>Çizgi Kalınlığı:</label>
+                <select id="lineWeight">
+                    <option value="0.5">Çok İnce (0.5px)</option>
+                    <option value="1">İnce (1px)</option>
+                    <option value="2">Normal (2px)</option>
+                    <option value="4" selected>Orta (4px)</option>
+                    <option value="7">Kalın (7px)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Çizgi Tipi:</label>
+                <select id="lineStyle">
+                    <option value="solid">Düz Çizgi (——)</option>
+                    <option value="dashed">Kesikli Çizgi (- - -)</option>
+                </select>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Görünürlük Kontrolü</div>
+                <button class="btn-toggle" id="toggleDrawBtn" onclick="toggleDrawings()">Çizimleri Gizle/Göster</button>
+                <button class="btn-toggle" id="toggleOsmBtn" onclick="toggleOsmLayer()" style="background:#0284c7;">OpenStreetMap Altlığını Aç/Kapat</button>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Yüklü Pafta / Görsel Katmanları</div>
+                <div class="btn-group-filter">
+                    <button class="filter-btn" style="background:#8b5cf6;" id="customOverlayBtn" onclick="toggleCustomOverlay()">Görsel Paftayı Gizle/Göster</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-danger-zone">
+            <button class="btn-danger-link" onclick="openDeleteConfirmModal()">⚠️ Çalışma Sayfasını Sil</button>
         </div>
     </div>
 </div>
 
-<!-- ALT FOOTER İMZA BARI -->
 <div class="bottom-footer">
     Designed by <strong>Murat Seymen Gümüş</strong>
 </div>
 
-<!-- TARAFSIZ HOŞ GELDİNİZ & PROJE SEÇİM PENCERESİ -->
+<!-- TARAFSIZ HOŞ GELDİNİZ MODALI -->
 <div class="modal-overlay" id="welcomeModal">
     <div class="modal-content">
         <h2 style="margin-bottom: 8px; color:#0f172a; font-size:20px;">👋 Hoş Geldiniz</h2>
@@ -371,7 +402,7 @@
     </div>
 </div>
 
-<!-- YENİ PROJE FORM PENCERESİ -->
+<!-- YENİ PROJE FORM MODALI -->
 <div class="modal-overlay" id="newProjectModal" style="display: none;">
     <div class="modal-content">
         <h3 style="margin-bottom: 15px;">➕ Yeni Çalışma Sayfası Oluştur</h3>
@@ -385,7 +416,7 @@
             <label>Harita Altlık Tipi Seçin:</label>
             <select id="newMapType" onchange="toggleCustomMapInput()">
                 <option value="osm">OpenStreetMap (Standart Uydu/Sokak Haritası)</option>
-                <option value="custom_image">Özel Görsel / Orijinal En-Boy Oranlı Pafta Yükle</option>
+                <option value="custom_image">Özel Görsel / Yüksek Çözünürlüklü Pafta Yükle</option>
             </select>
         </div>
 
@@ -401,15 +432,35 @@
     </div>
 </div>
 
-<!-- GRUPLARI DÜZENLE / DİNAMİK YÖNETİM MODALI -->
+<!-- GÜVENLİ SİLME MODALI -->
+<div class="modal-overlay" id="deleteConfirmModal" style="display: none;">
+    <div class="modal-content" style="border-top: 5px solid #ef4444;">
+        <h3 style="color:#dc2626; margin-bottom: 10px;">⚠️ Projeyi Silmeyi Onayla</h3>
+        <p style="font-size: 12px; color: #475569; margin-bottom: 12px; line-height: 1.5;">
+            <strong id="deleteProjectTargetName" style="color:#0f172a;">...</strong> projesini ve içerisindeki <strong>tüm iğneli fotoğrafları</strong> silmek üzeresiniz. Bu işlem <span style="color:#dc2626; font-weight:bold;">geri alınamaz</span>.
+        </p>
+        <p style="font-size: 11px; color: #64748b; margin-bottom: 12px;">
+            Yanlışlıkla silmeyi önlemek için lütfen aşağıya projenin adını birebir yazın:
+        </p>
+
+        <div class="form-group">
+            <input type="text" id="deleteProjectConfirmInput" placeholder="Proje adını buraya yazın..." oninput="validateDeleteInput()" style="border-color:#fca5a5;">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 15px;">
+            <button class="btn-primary" id="confirmDeleteBtn" onclick="executeDeleteProject()" style="background:#dc2626; opacity: 0.5; cursor: not-allowed;" disabled>🗑 Kalıcı Olarak Sil</button>
+            <button class="btn-primary" onclick="closeDeleteConfirmModal()" style="background:#64748b;">İptal</button>
+        </div>
+    </div>
+</div>
+
+<!-- GRUP DÜZENLEME MODALI -->
 <div class="modal-overlay" id="manageGroupsModal" style="display: none;">
     <div class="modal-content">
         <h3 style="margin-bottom: 10px;">✏️ Grupları İsimlendir ve Renklendir</h3>
-        <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Mevcut grupların isimlerini değiştirebilir, yeni renk atayabilir veya yeni gruplar ekleyebilirsiniz.</p>
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Bu çalışma sayfasına özel grup isimlerini değiştirebilir, yeni renk atayabilir veya yeni gruplar ekleyebilirsiniz.</p>
         
-        <div id="groupsListContainer">
-            <!-- Grup düzenleme elemanları dinamik yüklenecek -->
-        </div>
+        <div id="groupsListContainer"></div>
 
         <button onclick="addNewGroupItem()" style="width:100%; background:#f1f5f9; color:#0f172a; border:1px dashed #cbd5e1; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px; margin-top:8px;">
             + Yeni Grup / Tema Ekle
@@ -422,13 +473,39 @@
     </div>
 </div>
 
+<!-- İNCELE (F12) VE SAĞ TIK KORUMA SCRIPT'I -->
+<script>
+    // 1. Sağ Tık Menüsünü Engelle
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // 2. Klavye Kısayollarını (F12, Ctrl+Shift+I vb.) Engelle
+    document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 73) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 74) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.keyCode === 83) { e.preventDefault(); return false; }
+    });
+
+    // 3. Konsol Açıldığında Çakışan Debugger Tuzağı
+    setInterval(function() {
+        (function() { return false; })["constructor"]("debugger")();
+    }, 1000);
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, setDoc, getDoc, getDocs, onSnapshot, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // CLOUDINARY AYARLARI
+    const CLOUDINARY_CLOUD_NAME = "s3a08mpu";
+    const CLOUDINARY_UPLOAD_PRESET = "myljxquz";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDHfCsrY2yFi6sXHDPkvgNKxQTU0pP7gm4",
@@ -448,16 +525,35 @@
         'ankara_markers': { name: 'Güdül Çalışması', type: 'osm', customMapUrl: null }
     };
 
-    let customGroups = [
+    const defaultGroupTemplate = [
         { id: 'grup1', name: 'Grup 1', color: '#ef4444' },
         { id: 'grup2', name: 'Grup 2', color: '#3b82f6' },
         { id: 'grup3', name: 'Grup 3', color: '#10b981' },
         { id: 'grup4', name: 'Grup 4', color: '#f97316' }
     ];
 
+    let customGroups = JSON.parse(JSON.stringify(defaultGroupTemplate));
     const activeGroups = {};
 
-    // FIREBASE'DEN TÜM PROJELERİ CANLI ÇEKME & DOLDURMA
+    async function fetchProjectGroups(projectId) {
+        try {
+            const groupDocRef = doc(db, "projects", projectId, "settings", "groups");
+            const groupSnap = await getDoc(groupDocRef);
+
+            if (groupSnap.exists() && groupSnap.data().items) {
+                customGroups = groupSnap.data().items;
+            } else {
+                customGroups = JSON.parse(JSON.stringify(defaultGroupTemplate));
+                await setDoc(groupDocRef, { items: customGroups });
+            }
+            renderGroupsUI();
+        } catch (e) {
+            console.error("Projeye özel grup verileri yüklenirken hata:", e);
+            customGroups = JSON.parse(JSON.stringify(defaultGroupTemplate));
+            renderGroupsUI();
+        }
+    }
+
     async function fetchDatabaseProjects() {
         try {
             const querySnapshot = await getDocs(collection(db, "projects"));
@@ -502,8 +598,7 @@
         }
     }
 
-    // PROJE SİLME İŞLEMİ
-    window.deleteCurrentProject = async function() {
+    window.openDeleteConfirmModal = function() {
         if (!currentProjectId) {
             alert("Lütfen silmek istediğiniz projeyi seçin!");
             return;
@@ -514,33 +609,63 @@
             return;
         }
 
-        const projectName = projectsStore[currentProjectId] ? projectsStore[currentProjectId].name : "Bu projeyi";
+        const projectName = projectsStore[currentProjectId] ? projectsStore[currentProjectId].name : "Bu Projeyi";
+        document.getElementById('deleteProjectTargetName').innerText = projectName;
+        document.getElementById('deleteProjectConfirmInput').value = '';
+        
+        const btn = document.getElementById('confirmDeleteBtn');
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
 
-        if (confirm(`"${projectName}" isimli çalışma sayfasını ve bu sayfaya ait tüm fotoğrafları kalıcı olarak silmek istediğinize emin misiniz?`)) {
-            try {
-                // 1. Projeye ait tüm fotoğrafları sil
-                const targetCollection = "markers_" + currentProjectId;
-                const photosSnap = await getDocs(collection(db, targetCollection));
-                photosSnap.forEach(async (photoDoc) => {
-                    await deleteDoc(doc(db, targetCollection, photoDoc.id));
-                });
+        document.getElementById('deleteConfirmModal').style.display = 'flex';
+    };
 
-                // 2. Proje tanımını sil
-                await deleteDoc(doc(db, "projects", currentProjectId));
+    window.closeDeleteConfirmModal = function() {
+        document.getElementById('deleteConfirmModal').style.display = 'none';
+    };
 
-                delete projectsStore[currentProjectId];
+    window.validateDeleteInput = function() {
+        const inputVal = document.getElementById('deleteProjectConfirmInput').value.trim();
+        const targetName = projectsStore[currentProjectId] ? projectsStore[currentProjectId].name.trim() : "";
+        const btn = document.getElementById('confirmDeleteBtn');
 
-                alert("Proje başarıyla silindi!");
+        if (inputVal === targetName) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+    };
 
-                // 3. Varsayılan projeye dön
-                currentProjectId = "ankara_markers";
-                updateProjectSelectOptions();
-                switchProject("ankara_markers");
+    window.executeDeleteProject = async function() {
+        if (!currentProjectId || currentProjectId === "ankara_markers") return;
 
-            } catch (error) {
-                console.error("Proje silme hatası:", error);
-                alert("Proje silinirken bir hata oluştu!");
-            }
+        try {
+            const targetCollection = "markers_" + currentProjectId;
+            const photosSnap = await getDocs(collection(db, targetCollection));
+            photosSnap.forEach(async (photoDoc) => {
+                await deleteDoc(doc(db, targetCollection, photoDoc.id));
+            });
+
+            await deleteDoc(doc(db, "projects", currentProjectId, "settings", "groups"));
+            await deleteDoc(doc(db, "projects", currentProjectId));
+            
+            delete projectsStore[currentProjectId];
+
+            alert("Çalışma sayfası başarıyla silindi!");
+
+            closeDeleteConfirmModal();
+            currentProjectId = "ankara_markers";
+            updateProjectSelectOptions();
+            switchProject("ankara_markers");
+
+        } catch (error) {
+            console.error("Proje silme hatası:", error);
+            alert("Proje silinirken bir hata oluştu!");
         }
     };
 
@@ -608,7 +733,7 @@
         openManageGroupsModal();
     };
 
-    window.saveGroupChanges = function() {
+    window.saveGroupChanges = async function() {
         const nameInputs = document.querySelectorAll('.group-name-input');
         const colorInputs = document.querySelectorAll('.group-color-input');
 
@@ -626,23 +751,38 @@
             if (groupObj) groupObj.color = newColor;
         });
 
-        renderGroupsUI();
-        closeManageGroupsModal();
-        refreshAllMarkerStyles();
+        try {
+            const groupDocRef = doc(db, "projects", currentProjectId, "settings", "groups");
+            await setDoc(groupDocRef, { items: customGroups });
+            renderGroupsUI();
+            closeManageGroupsModal();
+            refreshAllMarkerStyles();
+            alert("Sadece bu çalışma sayfasına özel grup ayarları kaydedildi!");
+        } catch (error) {
+            console.error("Grup kaydetme hatası:", error);
+            alert("Grup ayarları kaydedilirken bir hata oluştu!");
+        }
     };
-
-    renderGroupsUI();
 
     const ankaraBounds = L.latLngBounds(
         L.latLng(38.8000, 31.3000),
         L.latLng(40.7000, 33.8000)
     );
 
-    const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 19, minZoom: 2 });
+    const osmHot = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { 
+        maxZoom: 24, 
+        maxNativeZoom: 19,
+        minZoom: 2 
+    });
 
+    // HARİTA MOTORU - DONANIM İVMESİ VE PERFORMANS AYARLARI
     let map = L.map('map', {
         center: [39.9334, 32.8597],
         zoom: 11,
+        maxZoom: 24,
+        preferCanvas: true, // Ekran Kartı (GPU) çizim hızlandırmasını açar
+        updateWhenZooming: false, // Zoom sırasında arka planı gereksiz re-render yapıp kasılmasını önler
+        updateWhenIdle: true,
         layers: [osmHot]
     });
 
@@ -730,11 +870,13 @@
         }
     });
 
-    function switchProject(projectId) {
+    async function switchProject(projectId) {
         currentProjectId = projectId;
         const pData = projectsStore[projectId] || { name: 'Özel Çalışma', type: 'osm' };
 
         document.getElementById('projectHeaderTitle').innerHTML = `MAP Şehir Planlama <span>- ${pData.name}</span>`;
+
+        await fetchProjectGroups(projectId);
 
         if (currentCustomOverlay) {
             map.removeLayer(currentCustomOverlay);
@@ -757,6 +899,7 @@
             }
 
             const tempImg = new Image();
+            tempImg.crossOrigin = "Anonymous";
             tempImg.onload = function() {
                 const w = tempImg.naturalWidth || tempImg.width || 1000;
                 const h = tempImg.naturalHeight || tempImg.height || 1000;
@@ -773,7 +916,13 @@
                     L.latLng(centerLat + (latSpan / 2), centerLng + (lngSpan / 2))
                 );
 
-                currentCustomOverlay = L.imageOverlay(pData.customMapUrl, bounds, { pane: 'drawPane' }).addTo(map);
+                currentCustomOverlay = L.imageOverlay(pData.customMapUrl, bounds, { 
+                    pane: 'drawPane',
+                    smoothImages: false,
+                    interactive: false, // Pafta tık dinlemelerini kapatıp akıcılığı artırır
+                    noWrap: true
+                }).addTo(map);
+
                 map.fitBounds(bounds);
             };
             tempImg.src = pData.customMapUrl;
@@ -808,6 +957,69 @@
         document.getElementById('customMapGroup').style.display = type === 'custom_image' ? 'block' : 'none';
     };
 
+    function compressImageForCloudinary(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    let targetWidth = img.width;
+                    let targetHeight = img.height;
+                    let maxDimension = 6500;
+
+                    if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                        if (targetWidth > targetHeight) {
+                            targetHeight *= maxDimension / targetWidth;
+                            targetWidth = maxDimension;
+                        } else {
+                            targetWidth *= maxDimension / targetHeight;
+                            targetHeight = maxDimension;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/jpeg', 0.88);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function uploadMapToCloudinary(file) {
+        let fileToUpload = file;
+
+        if (file.size > 9.5 * 1024 * 1024) {
+            fileToUpload = await compressImageForCloudinary(file);
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileToUpload, "pafta.jpg");
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errJson = await response.json().catch(() => ({}));
+            throw new Error(errJson.error?.message || "Görsel yüklenemedi.");
+        }
+
+        const data = await response.json();
+        return data.secure_url;
+    }
+
     window.createNewProject = async function() {
         const name = document.getElementById('newProjectName').value.trim();
         const mapType = document.getElementById('newMapType').value;
@@ -816,25 +1028,42 @@
 
         if (!name) { alert("Lütfen çalışma ismi girin!"); return; }
 
-        let customMapBase64 = null;
-        if (mapType === 'custom_image' && customFile) {
-            btn.innerText = "Yükleniyor & İşleniyor...";
+        let customMapUrl = null;
+        if (mapType === 'custom_image') {
+            if (!customFile) {
+                alert("Lütfen bir pafta görseli seçin!");
+                return;
+            }
+            btn.innerText = "Yüksek Kalitede Hazırlanıyor & Yükleniyor...";
             btn.disabled = true;
-            customMapBase64 = await processHighResMapImage(customFile);
+
+            try {
+                customMapUrl = await uploadMapToCloudinary(customFile);
+            } catch (error) {
+                console.error("Görsel yükleme hatası:", error);
+                alert("Pafta yükleme hatası: " + error.message);
+                btn.innerText = "Kaydet & Başlat";
+                btn.disabled = false;
+                return;
+            }
         }
 
         const projectId = 'proj_' + Date.now();
-        const newProjObj = { name: name, type: mapType, customMapUrl: customMapBase64 };
+        const newProjObj = { name: name, type: mapType, customMapUrl: customMapUrl };
 
         try {
             await setDoc(doc(db, "projects", projectId), newProjObj);
+            
+            const groupDocRef = doc(db, "projects", projectId, "settings", "groups");
+            await setDoc(groupDocRef, { items: defaultGroupTemplate });
+
             projectsStore[projectId] = newProjObj;
 
             updateProjectSelectOptions();
             document.getElementById('projectSelect').value = projectId;
             document.getElementById('newProjectModal').style.display = 'none';
             
-            switchProject(projectId);
+            await switchProject(projectId);
 
             document.getElementById('newProjectName').value = '';
             document.getElementById('customMapFile').value = '';
@@ -866,41 +1095,6 @@
                     canvas.width = width; canvas.height = height;
                     canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                     resolve(canvas.toDataURL('image/jpeg', 0.7));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function processHighResMapImage(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    const max_size = 1800; 
-                    if (width > max_size || height > max_size) {
-                        if (width > height) {
-                            height *= max_size / width;
-                            width = max_size;
-                        } else {
-                            width *= max_size / height;
-                            height = max_size;
-                        }
-                    }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.75));
                 };
                 img.src = e.target.result;
             };
@@ -1047,6 +1241,23 @@
             groupOptionsHtml += `<option value="${g.id}" ${selected}>${g.name}</option>`;
         });
 
+        const directions = [
+            { val: 0, label: 'Kuzey (0°)' },
+            { val: 45, label: 'Kuzeydoğu (45°)' },
+            { val: 90, label: 'Doğu (90°)' },
+            { val: 135, label: 'Güneydoğu (135°)' },
+            { val: 180, label: 'Güney (180°)' },
+            { val: 225, label: 'Güneybatı (225°)' },
+            { val: 270, label: 'Batı (270°)' },
+            { val: 315, label: 'Kuzeybatı (315°)' }
+        ];
+
+        let directionOptionsHtml = '';
+        directions.forEach(d => {
+            const selectedDir = parseInt(angle) === d.val ? 'selected' : '';
+            directionOptionsHtml += `<option value="${d.val}" ${selectedDir}>${d.label}</option>`;
+        });
+
         const popupContent = `
             <div class="popup-container">
                 <img src="${photo.imageUrl}" class="popup-img"><br>
@@ -1059,6 +1270,14 @@
                         ${groupOptionsHtml}
                     </select>
                     <button class="popup-action-btn" onclick="window.updatePhotoGroup('${id}')">💾 Grubu Güncelle</button>
+                </div>
+
+                <div style="margin-top: 4px;">
+                    <label style="font-size:10px; font-weight:bold; color:#475569; display:block; text-align:left; margin-bottom:2px;">ÇEKİM AÇISINI DEĞİŞTİR:</label>
+                    <select id="pop_dir_${id}" class="popup-group-select">
+                        ${directionOptionsHtml}
+                    </select>
+                    <button class="popup-action-btn" style="background:#0284c7;" onclick="window.updatePhotoDirection('${id}')">💾 Yönü Güncelle</button>
                 </div>
 
                 <button class="delete-btn" onclick="window.deletePhoto('${id}')">🗑 Sil</button>
@@ -1089,6 +1308,24 @@
         } catch (error) {
             console.error("Grup güncelleme hatası:", error);
             alert("Grup güncellenirken bir hata oluştu!");
+        }
+    };
+
+    window.updatePhotoDirection = async function(docId) {
+        const selectElem = document.getElementById(`pop_dir_${docId}`);
+        if (!selectElem) return;
+
+        const newDirection = selectElem.value;
+        const targetCollection = currentProjectId === "ankara_markers" ? "ankara_markers" : ("markers_" + currentProjectId);
+
+        try {
+            await updateDoc(doc(db, targetCollection, docId), {
+                direction: newDirection
+            });
+            alert("Fotoğrafın açısı/yönü başarıyla güncellendi!");
+        } catch (error) {
+            console.error("Açı güncelleme hatası:", error);
+            alert("Yön güncellenirken bir hata oluştu!");
         }
     };
 
@@ -1130,8 +1367,12 @@
         return dd;
     }
 
-    // İLK AÇILIŞTA PROJELERİ VERİTABANINDAN YÜKLE
-    fetchDatabaseProjects();
+    async function initApp() {
+        await fetchDatabaseProjects();
+        await fetchProjectGroups(currentProjectId);
+    }
+
+    initApp();
 </script>
 
 </body>
